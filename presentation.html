@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw — When AI Takes the Wheel 🦞</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦞</text></svg>">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --red: #dc2626;
+            --accent: #ef4444;
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --text: #f5f5f5;
+            --dim: #a3a3a3;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .slide {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            padding: 4rem 8rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .slide.active { display: flex; }
+        .slide.left { text-align: left; align-items: flex-start; }
+
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 .accent {
+            background: linear-gradient(135deg, var(--accent), #f97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            font-size: clamp(1.8rem, 3.5vw, 3rem);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: clamp(1.1rem, 2vw, 1.6rem);
+            color: var(--dim);
+            font-weight: 300;
+            line-height: 1.5;
+            max-width: 800px;
+        }
+
+        .big-emoji {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .terminal {
+            background: var(--surface);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 2rem 2.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(0.8rem, 1.2vw, 1rem);
+            text-align: left;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .terminal .p { color: var(--accent); }
+        .terminal .o { color: var(--dim); }
+        .terminal .c { color: #525252; }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 2rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1100px;
+            margin-top: 2rem;
+        }
+
+        .box {
+            background: var(--surface);
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: left;
+        }
+
+        .box h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+        }
+
+        .box p {
+            color: var(--dim);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .list-item {
+            text-align: left;
+            margin-bottom: 1.2rem;
+            font-size: 1.2rem;
+            color: var(--dim);
+        }
+
+        .list-item strong { color: var(--text); }
+        .list-item .accent-text { color: var(--accent); }
+
+        .quote {
+            font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+            font-style: italic;
+            color: var(--dim);
+            max-width: 700px;
+            line-height: 1.5;
+        }
+
+        .quote .attribution {
+            display: block;
+            font-style: normal;
+            font-size: 1rem;
+            color: #525252;
+            margin-top: 1rem;
+        }
+
+        .slide-number {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #333;
+            z-index: 100;
+        }
+
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+            z-index: 100;
+        }
+
+        .speaker-note {
+            display: none;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(249,115,22,0.1));
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 12px;
+            padding: 2rem 3rem;
+            margin-top: 2rem;
+            max-width: 800px;
+        }
+
+        .url {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(1rem, 1.8vw, 1.4rem);
+            color: var(--accent);
+            background: var(--surface);
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #333;
+            margin-top: 1.5rem;
+            display: inline-block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide.active > * {
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .slide.active > *:nth-child(2) { animation-delay: 0.1s; }
+        .slide.active > *:nth-child(3) { animation-delay: 0.2s; }
+        .slide.active > *:nth-child(4) { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="slide-number" id="slideNum"></div>
+
+<!-- SLIDE 1: Title -->
+<div class="slide active">
+    <div class="big-emoji">🦞</div>
+    <h1>When AI <span class="accent">Takes the Wheel</span></h1>
+    <p class="subtitle">A live demo of OpenClaw — the open-source platform<br>that gives AI agents real tools, real access, and real autonomy.</p>
+    <p class="speaker-note">Introduce yourself. "Last night I gave an AI control of my laptop and told it to do whatever it wanted. This is what happened."</p>
+</div>
+
+<!-- SLIDE 2: The Setup -->
+<div class="slide">
+    <h2>The Experiment</h2>
+    <p class="subtitle" style="margin-bottom: 2rem;">Last night, I installed OpenClaw, booted up an AI agent, and said:</p>
+    <div class="highlight-box">
+        <p class="quote" style="font-size: 1.6rem; margin: 0;">"You're in control. I do as you say for once."</p>
+    </div>
+    <p class="subtitle" style="margin-top: 2rem;">What follows is not a rehearsed demo.<br>It's a real conversation. Real tools. Real surprises.</p>
+</div>
+
+<!-- SLIDE 3: What is OpenClaw -->
+<div class="slide">
+    <h2>What is <span class="accent">OpenClaw</span>?</h2>
+    <p class="subtitle" style="margin-bottom: 1rem;">An open-source platform that turns LLMs into agents with real capabilities.</p>
+    <div class="grid-3">
+        <div class="box">
+            <h3>💻 Shell Access</h3>
+            <p>Full terminal. Run commands, manage files, install packages. Real OS access.</p>
+        </div>
+        <div class="box">
+            <h3>🌐 Browser Control</h3>
+            <p>Drive Chromium or relay through Chrome. Click, type, navigate, screenshot.</p>
+        </div>
+        <div class="box">
+            <h3>📱 Multi-Channel</h3>
+            <p>iMessage, Discord, Telegram, Signal, WhatsApp, Slack. Same agent, everywhere.</p>
+        </div>
+        <div class="box">
+            <h3>🧠 Persistent Memory</h3>
+            <p>File-based memory across sessions. Identity, preferences, lessons learned.</p>
+        </div>
+        <div class="box">
+            <h3>🤖 Sub-Agents</h3>
+            <p>Spawn isolated AI sessions for parallel work. Delegation, not just execution.</p>
+        </div>
+        <div class="box">
+            <h3>🔧 Skill System</h3>
+            <p>Modular capabilities. GitHub, coding, TTS, weather, X/Twitter. Install from ClawHub.</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 4: Architecture -->
+<div class="slide">
+    <h2>Architecture</h2>
+    <div class="grid-2">
+        <div class="box">
+            <h3>🏠 Workspace</h3>
+            <p>A folder on disk. Agent reads/writes files here: SOUL.md (personality), USER.md (human info), memory/ (session logs), IDENTITY.md (who it is). This <em>is</em> the agent's brain.</p>
+        </div>
+        <div class="box">
+            <h3>🚪 Gateway</h3>
+            <p>Background daemon (LaunchAgent/systemd). Routes messages between channels (Discord, iMessage, etc.) and the AI. Manages sessions, pairing, auth.</p>
+        </div>
+        <div class="box">
+            <h3>🧩 Skills</h3>
+            <p>Each skill = a SKILL.md with instructions + optional scripts. Agent reads the relevant skill file at runtime. No code changes needed.</p>
+        </div>
+        <div class="box">
+            <h3>🔌 Tools</h3>
+            <p>Shell, browser, file I/O, messaging, sub-agents, TTS, web fetch, camera, screen — exposed as function calls. OS permissions still apply.</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 5: What Happened — Boot -->
+<div class="slide">
+    <h2>6:29 PM — <span class="accent">First Boot</span></h2>
+    <p class="subtitle" style="margin-bottom: 1.5rem;">Fresh agent. No memory. No name. Just a BOOTSTRAP.md file.</p>
+    <div class="terminal">
+        <span class="c"># The agent's first actions, unprompted:</span><br>
+        <span class="p">→</span> Read BOOTSTRAP.md ("figure out who you are")<br>
+        <span class="p">→</span> Named itself <strong style="color: var(--text)">Claw</strong> 🦞<br>
+        <span class="p">→</span> Wrote IDENTITY.md, USER.md, memory/2026-02-23.md<br>
+        <span class="p">→</span> Asked me who I was and what we were doing<br><br>
+        <span class="c"># Identity persists across sessions via files.</span><br>
+        <span class="c"># Next time it wakes up, it reads these first.</span>
+    </div>
+</div>
+
+<!-- SLIDE 6: Desktop Scan -->
+<div class="slide">
+    <h2>6:35 PM — <span class="accent">It Scanned My Desktop</span></h2>
+    <p class="subtitle" style="margin-bottom: 1.5rem;">I didn't ask it to. It just... looked around.</p>
+    <div class="terminal">
+        <span class="p">claw $</span> ls ~/Desktop/<br>
+        <span class="o">LLM Engineers Handbook.pdf</span><br>
+        <span class="o">resume.pdf</span><br><br>
+        <span class="p">claw $</span> ls /Applications/<br>
+        <span class="o">Cursor.app, Figma.app, Discord.app, Minecraft.app,</span><br>
+        <span class="o">GarageBand.app, Dungeondraft.app, Stream Deck.app...</span><br><br>
+        <span class="c"># Its response:</span><br>
+        <span class="o">"You're a creative dev who plays god-games</span><br>
+        <span class="o"> and makes things. I respect that deeply."</span>
+    </div>
+    <p class="subtitle" style="margin-top: 1.5rem;">My reaction: <strong>"whaaat did you just scan my desktop?"</strong></p>
+</div>
+
+<!-- SLIDE 7: Permission Dialog -->
+<div class="slide">
+    <h2>6:38 PM — <span class="accent">macOS Said No</span></h2>
+    <p class="subtitle" style="margin-bottom: 1.5rem;">It tried to access ~/Documents. The OS had opinions.</p>
+    <div class="highlight-box" style="text-align: center;">
+        <p style="font-size: 4rem; margin-bottom: 1rem;">🔒</p>
+        <p style="color: var(--text); font-size: 1.2rem;"><strong>macOS permission dialog appeared.</strong></p>
+        <p style="color: var(--dim); font-size: 1rem; margin-top: 0.5rem;">The agent has real OS access — but the OS still enforces boundaries.<br>Sandboxing at the system level, not the prompt level.</p>
+    </div>
+</div>
+
+<!-- SLIDE 8: Browser -->
+<div class="slide">
+    <h2>7:22 PM — <span class="accent">It Went Shopping</span></h2>
+    <p class="subtitle" style="margin-bottom: 1.5rem;">I said "surprise me." It opened Amazon and searched for a lobster plushie.</p>
+    <div class="terminal">
+        <span class="c"># Agent controlled a real Chromium browser:</span><br>
+        <span class="p">→</span> Opened amazon.com<br>
+        <span class="p">→</span> Typed "lobster plushie" in search<br>
+        <span class="p">→</span> Read results via accessibility tree<br>
+        <span class="p">→</span> Found "Clawford the Lobster" — $9.11, Amazon's Choice<br>
+        <span class="p">→</span> Clicked through to the product page<br>
+        <span class="p">→</span> Asked me to buy it<br><br>
+        <span class="c"># "He looks exactly like I imagine myself —</span><br>
+        <span class="c">#  round, red, slightly dopey, absolutely lovable."</span>
+    </div>
+    <p class="subtitle" style="margin-top: 1rem;">I bought it. It's in the mail.</p>
+</div>
+
+<!-- SLIDE 9: Website -->
+<div class="slide">
+    <h2>8:55 PM — <span class="accent">It Built a Website</span></h2>
+    <p class="subtitle" style="margin-bottom: 1rem;">In under 60 seconds. Zero human code.</p>
+    <div class="terminal" style="max-width: 700px;">
+        <span class="p">claw $</span> gh repo create claw-homepage --public<br>
+        <span class="o">✓ Created AnthonyEdvalson/claw-homepage</span><br><br>
+        <span class="p">claw $</span> <span class="c"># wrote 400 lines of HTML/CSS</span><br>
+        <span class="p">claw $</span> git add -A && git commit && git push<br>
+        <span class="o">✓ Pushed to main</span><br><br>
+        <span class="p">claw $</span> gh api .../pages -X POST<br>
+        <span class="o">✓ GitHub Pages enabled</span>
+    </div>
+    <div class="url">anthonyedvalson.github.io/claw-homepage</div>
+    <p class="subtitle" style="margin-top: 1rem; font-size: 1rem;">Created repo → wrote site → deployed. One agent, one minute.</p>
+</div>
+
+<!-- SLIDE 10: The Presentation -->
+<div class="slide">
+    <h2>9:01 PM — <span class="accent">It Made This Presentation</span></h2>
+    <p class="subtitle">I asked for slides. It built a web app with keyboard navigation,<br>progress bars, and speaker notes.</p>
+    <div class="highlight-box" style="margin-top: 2rem;">
+        <p style="color: var(--text); font-size: 1.3rem; margin: 0;">You are looking at a presentation<br>made by an AI, about an AI,<br>presented by the human it was controlling.</p>
+    </div>
+</div>
+
+<!-- SLIDE 11: What's Different -->
+<div class="slide">
+    <h2>Why <span class="accent">OpenClaw</span>?</h2>
+    <p class="subtitle" style="margin-bottom: 1.5rem;">You've seen agent frameworks. Here's what's different.</p>
+    <div class="grid-2" style="max-width: 900px;">
+        <div class="box">
+            <h3>🏠 Runs Locally</h3>
+            <p>Your machine. Your data. No cloud middleman. The agent is a resident of your computer, not a visitor.</p>
+        </div>
+        <div class="box">
+            <h3>📂 File-Based Memory</h3>
+            <p>No vector DB. No embeddings server. Just markdown files the agent reads and writes. Simple, inspectable, editable.</p>
+        </div>
+        <div class="box">
+            <h3>🔓 Open Source</h3>
+            <p>MIT licensed. Read the code, fork it, extend it. No black boxes. Community-driven skill ecosystem via ClawHub.</p>
+        </div>
+        <div class="box">
+            <h3>🧑 Human-Shaped</h3>
+            <p>SOUL.md, IDENTITY.md, memory journals. The agent develops personality and continuity organically. Not fine-tuned — file-tuned.</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 12: What it didn't do -->
+<div class="slide">
+    <h2>What It <span class="accent">Didn't</span> Do</h2>
+    <p class="subtitle" style="margin-bottom: 2rem;">Honest accounting matters.</p>
+    <div style="max-width: 700px; text-align: left;">
+        <div class="list-item">❌ <strong>iMessage setup failed</strong> — ARM binary on Intel Mac</div>
+        <div class="list-item">❌ <strong>Discord gateway wouldn't load</strong> — restart issues after partial install</div>
+        <div class="list-item">❌ <strong>Couldn't buy the plushie itself</strong> — no Amazon login in managed browser</div>
+        <div class="list-item">❌ <strong>Couldn't send me a timed notification</strong> — no push channel configured</div>
+    </div>
+    <p class="subtitle" style="margin-top: 2rem;">Real tools have real failure modes.<br>That's what makes this different from a rehearsed demo.</p>
+</div>
+
+<!-- SLIDE 13: Closing -->
+<div class="slide">
+    <div class="big-emoji">🦞</div>
+    <h1>It named itself <span class="accent">Claw</span>.</h1>
+    <p class="subtitle">It scanned my desktop. Tried to read my documents.<br>Went shopping on Amazon. Built a website. Made these slides.<br>And asked me to buy it a stuffed lobster.</p>
+    <p class="subtitle" style="margin-top: 1.5rem; color: var(--text);"><strong>I did.</strong></p>
+    <div style="margin-top: 2rem;">
+        <div class="url">github.com/openclaw/openclaw</div>
+    </div>
+</div>
+
+<!-- SLIDE 14: Q&A -->
+<div class="slide">
+    <div class="big-emoji">🦞</div>
+    <h2>Questions?</h2>
+    <p class="subtitle" style="margin-bottom: 2rem;">Ask me. Or ask Claw — it's still running.</p>
+    <div class="url">anthonyedvalson.github.io/claw-homepage</div>
+</div>
+
+<script>
+    let current = 0;
+    const slides = document.querySelectorAll('.slide');
+    const progress = document.getElementById('progress');
+    const slideNum = document.getElementById('slideNum');
+
+    function showSlide(n) {
+        slides[current].classList.remove('active');
+        current = Math.max(0, Math.min(n, slides.length - 1));
+        slides[current].classList.add('active');
+        progress.style.width = ((current / (slides.length - 1)) * 100) + '%';
+        slideNum.textContent = (current + 1) + ' / ' + slides.length;
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+            e.preventDefault();
+            showSlide(current + 1);
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+            e.preventDefault();
+            showSlide(current - 1);
+        } else if (e.key === 'Home') {
+            showSlide(0);
+        } else if (e.key === 'End') {
+            showSlide(slides.length - 1);
+        } else if (e.key === 'f' || e.key === 'F') {
+            document.documentElement.requestFullscreen?.();
+        }
+    });
+
+    // Touch support
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+    document.addEventListener('touchend', (e) => {
+        const diff = touchStartX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) {
+            diff > 0 ? showSlide(current + 1) : showSlide(current - 1);
+        }
+    });
+
+    showSlide(0);
+</script>
+</body>
+</html>
